@@ -37,6 +37,9 @@ object TypedSample1B extends App {
   system ! Hello("Johan")
   system ! Hello("Scala Italy")
 
+  // will not compile:
+  // system ! "ups"
+  // system ! Hello
 
   // (messages delivered async, main completes, system keeps running)
 }
