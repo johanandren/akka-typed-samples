@@ -6,9 +6,10 @@ package com.lightbend.akka.samples.java;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
-import akka.actor.typed.javadsl.MutableBehavior;
+import akka.actor.typed.javadsl.Receive;
 import akka.actor.typed.receptionist.Receptionist;
 import akka.actor.typed.receptionist.ServiceKey;
 import akka.cluster.typed.Cluster;
@@ -100,7 +101,7 @@ public class Sample5 {
   }
 
 
-  public static class SensorBehavior extends MutableBehavior<TriggerCommand> {
+  public static class SensorBehavior extends AbstractBehavior<TriggerCommand> {
 
     private final ActorContext<TriggerCommand> context;
     private Set<ActorRef<ActivityEvent>> alarms = Collections.EMPTY_SET;
@@ -119,7 +120,7 @@ public class Sample5 {
     }
 
     @Override
-    public Behaviors.Receive<TriggerCommand> createReceive() {
+    public Receive<TriggerCommand> createReceive() {
       return receiveBuilder()
           .onMessage(TriggerSensor.class, this::onTrigger)
           .onMessage(AlarmActorUpdate.class, this::onAlarmActorUpdate)

@@ -4,7 +4,7 @@
 package com.lightbend.akka.samples.scala
 
 import akka.actor.typed.{ActorSystem, Behavior}
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors, MutableBehavior}
+import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 
 object Sample3 {
   sealed trait Command
@@ -14,7 +14,8 @@ object Sample3 {
   class MutableGreetingBehavior(
       context: ActorContext[Command],
       var greeting: String
-  ) extends MutableBehavior[Command] {
+  ) extends AbstractBehavior[Command] {
+
 
     override def onMessage(msg: Command): Behavior[Command] = {
       msg match {
@@ -37,7 +38,7 @@ object Sample3 {
       "my-system")
 
     system ! Hello("Johan")
-    system ! ChangeGreeting("Sveiki")
-    system ! Hello("Devdays Vilnius audience")
+    system ! ChangeGreeting("Hej")
+    system ! Hello("Øredev audience")
   }
 }

@@ -3,6 +3,7 @@
  */
 package com.lightbend.akka.samples.java;
 
+import akka.actor.Actor;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
@@ -41,11 +42,11 @@ public class Sample2 {
   }
 
   public static void main(String[] args) throws IOException {
-    var system =
+    ActorSystem<Command> system =
         ActorSystem.create(dynamicGreetingBehavior("Hello"), "my-system");
     system.tell(new Hello("Johan"));
-    system.tell(new ChangeGreeting("Sveiki"));
-    system.tell(new Hello("Devdays Vilnius audience"));
+    system.tell(new ChangeGreeting("Hej"));
+    system.tell(new Hello("Øredev audience"));
   }
 
 }

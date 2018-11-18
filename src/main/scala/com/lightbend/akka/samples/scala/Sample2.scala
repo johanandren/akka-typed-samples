@@ -30,7 +30,7 @@ object Sample2 {
     val system = ActorSystem(dynamicGreetingBehavior("Hello"), "my-system")
 
     system ! Hello("Johan")
-    system ! ChangeGreeting("Sveiki")
-    system ! Hello("Devdays Vilnius audience")
+    system ! ChangeGreeting("Hej")
+    system ! Hello("Øredec audience")
   }
 }

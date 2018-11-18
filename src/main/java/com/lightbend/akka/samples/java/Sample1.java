@@ -34,7 +34,7 @@ public class Sample1 {
         ActorSystem.create(greetingBehavior, "my-system");
     ActorRef<Hello> rootActor = actorSystem;
     rootActor.tell(new Hello("Johan"));
-    rootActor.tell(new Hello("Devdays Vilnius audience"));
+    rootActor.tell(new Hello("Øredev audience"));
 
     System.out.println("Press that any-key to terminate");
     System.in.read();

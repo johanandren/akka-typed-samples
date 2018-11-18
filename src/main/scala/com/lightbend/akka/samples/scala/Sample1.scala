@@ -27,7 +27,7 @@ object Sample1 {
     val rootActor = system
 
     rootActor ! Hello("Johan")
-    rootActor ! Hello("Devdays Vilnius audience")
+    rootActor ! Hello("Øredev audience")
 
     println("Press the any-key to terminate")
     StdIn.readLine()

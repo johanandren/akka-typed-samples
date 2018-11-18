@@ -5,9 +5,10 @@ package com.lightbend.akka.samples.java;
 
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
-import akka.actor.typed.javadsl.MutableBehavior;
+import akka.actor.typed.javadsl.Receive;
 
 /**
  * Same as Sample2 but using a more oo-like API
@@ -29,18 +30,18 @@ public class Sample3 {
     }
   }
 
-  static class MutableGreetingBehavior extends MutableBehavior<Command> {
+  static class DynamicGreetingBehavior extends AbstractBehavior<Command> {
 
     private final ActorContext<Command> context;
     private String greeting;
 
-    public MutableGreetingBehavior(String initialGreeting, ActorContext<Command> context) {
+    public DynamicGreetingBehavior(String initialGreeting, ActorContext<Command> context) {
       this.context = context;
       greeting = initialGreeting;
     }
 
     @Override
-    public Behaviors.Receive<Command> createReceive() {
+    public Receive<Command> createReceive() {
       return receiveBuilder()
           .onMessage(Hello.class, this::onHello)
           .onMessage(ChangeGreeting.class, this::onChangeGreeting)
@@ -59,12 +60,12 @@ public class Sample3 {
   }
 
   public static void main(String[] args) {
-    var system = ActorSystem.<Command>create(
-        Behaviors.setup((context) -> new MutableGreetingBehavior("Hello", context)),
+    ActorSystem<Command> system = ActorSystem.<Command>create(
+        Behaviors.setup((context) -> new DynamicGreetingBehavior("Hello", context)),
         "my-system"
     );
     system.tell(new Hello("Johan"));
-    system.tell(new ChangeGreeting("Sveiki"));
-    system.tell(new Hello("Devdays Vilnius audience"));
+    system.tell(new ChangeGreeting("Hej"));
+    system.tell(new Hello("Øredev audience"));
   }
 }
