@@ -1,6 +1,3 @@
-/**
- * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
- */
 package com.lightbend.akka.samples.java;
 
 import akka.actor.typed.ActorRef;
@@ -12,6 +9,7 @@ import java.io.IOException;
 
 /**
  * Minimum viable sample - single message hello-world actor that just logs greetings
+ * Java developers will likely prefer the OO style APIs in sample 2 and forward
  */
 public class Sample1 {
 
@@ -23,18 +21,21 @@ public class Sample1 {
   }
 
   final static Behavior<Hello> greetingBehavior =
-    Behaviors.receive(Hello.class)
-      .onMessage(Hello.class, (context, message) -> {
-        context.getLog().info("Hello " + message.who + "!");
-        return Behavior.same();
-      }).build();
+      Behaviors.setup(context ->
+          Behaviors.receive(Hello.class)
+              .onMessage(Hello.class, message -> {
+                context.getLog().info("Hello " + message.who + "!");
+                return Behaviors.same();
+              }).build()
+      );
 
   public static void main(String[] args) throws IOException {
     ActorSystem<Hello> actorSystem =
         ActorSystem.create(greetingBehavior, "my-system");
     ActorRef<Hello> rootActor = actorSystem;
+
     rootActor.tell(new Hello("Johan"));
-    rootActor.tell(new Hello("Devdays Vilnius audience"));
+    rootActor.tell(new Hello("Akka talk audience"));
 
     System.out.println("Press that any-key to terminate");
     System.in.read();

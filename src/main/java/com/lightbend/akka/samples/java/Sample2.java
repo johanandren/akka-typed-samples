@@ -1,51 +1,73 @@
-/**
- * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
- */
 package com.lightbend.akka.samples.java;
 
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
+import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
+import akka.actor.typed.javadsl.Receive;
 
 import java.io.IOException;
 
 /**
- * Shows multi-message protocol, and keepin a constant state, but changing it by changing behavior
+ * Shows multi-message protocol, and the OO style API
  */
 public class Sample2 {
 
-  interface Command {}
+  static final class DynamicGreeter extends AbstractBehavior<DynamicGreeter.Command> {
 
-  static class ChangeGreeting implements Command {
-    public final String newGreeting;
-    public ChangeGreeting(String newGreeting) {
-      this.newGreeting = newGreeting;
+    interface Command {}
+
+    static class ChangeGreeting implements Command {
+      public final String newGreeting;
+      public ChangeGreeting(String newGreeting) {
+        this.newGreeting = newGreeting;
+      }
     }
-  }
 
-  static class Hello implements Command {
-    public final String who;
-    public Hello(String who) {
-      this.who = who;
+    static class Hello implements Command {
+      public final String who;
+      public Hello(String who) {
+        this.who = who;
+      }
     }
-  }
 
-  public static Behavior<Command> dynamicGreetingBehavior(String greeting) {
-    return Behaviors.receive(Command.class)
-        .onMessage(Hello.class, (context, message) -> {
-          context.getLog().info(greeting + " " + message.who + "!");
-          return Behavior.same();
-        }).onMessage(ChangeGreeting.class, (context, changeGreeting) ->
-          dynamicGreetingBehavior(changeGreeting.newGreeting)
-        ).build();
+    static Behavior<Command> create(String initialGreeting) {
+      return Behaviors.setup(context -> new DynamicGreeter(context, initialGreeting));
+    }
+
+    private String greeting;
+
+    private DynamicGreeter(ActorContext<Command> context, String initialGreeting) {
+      super(context);
+      greeting = initialGreeting;
+    }
+
+    public Receive<Command> createReceive() {
+      return newReceiveBuilder()
+          .onMessage(Hello.class, this::onHello)
+          .onMessage(ChangeGreeting.class, this::onChangeGreeting)
+          .build();
+    }
+
+
+    private Behavior<Command> onHello(Hello command) {
+      getContext().getLog().info(greeting + " " + command.who + "!");
+      return this;
+    }
+
+    private Behavior<Command> onChangeGreeting(ChangeGreeting command) {
+      greeting = command.newGreeting;
+      return this;
+    }
+
   }
 
   public static void main(String[] args) throws IOException {
-    var system =
-        ActorSystem.create(dynamicGreetingBehavior("Hello"), "my-system");
-    system.tell(new Hello("Johan"));
-    system.tell(new ChangeGreeting("Sveiki"));
-    system.tell(new Hello("Devdays Vilnius audience"));
+    var system = ActorSystem.create(DynamicGreeter.create("Hello"), "my-system");
+    system.tell(new DynamicGreeter.Hello("Johan"));
+    system.tell(new DynamicGreeter.ChangeGreeting("Hej"));
+    system.tell(new DynamicGreeter.Hello("Akka talk audience"));
   }
 
 }

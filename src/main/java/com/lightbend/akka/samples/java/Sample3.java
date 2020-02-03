@@ -1,70 +1,111 @@
-/**
- * Copyright (C) 2009-2018 Lightbend Inc. <https://www.lightbend.com>
- */
 package com.lightbend.akka.samples.java;
 
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
+import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
-import akka.actor.typed.javadsl.MutableBehavior;
+import akka.actor.typed.javadsl.Receive;
 
 /**
- * Same as Sample2 but using a more oo-like API
+ * Burglar alarm sample - a stateful actor that can be in either of two states - enabled or disabled.
+ * If there is activity whilst enabled the alarm will sound.
  */
 public class Sample3 {
 
-  interface Command {}
-  static class ChangeGreeting implements Command {
-    public final String newGreeting;
-    public ChangeGreeting(String newGreeting) {
-      this.newGreeting = newGreeting;
-    }
-  }
+  static class Alarm {
 
-  static class Hello implements Command {
-    public final String who;
-    public Hello(String who) {
-      this.who = who;
-    }
-  }
+    interface Message { }
 
-  static class MutableGreetingBehavior extends MutableBehavior<Command> {
-
-    private final ActorContext<Command> context;
-    private String greeting;
-
-    public MutableGreetingBehavior(String initialGreeting, ActorContext<Command> context) {
-      this.context = context;
-      greeting = initialGreeting;
+    static class Enable implements Message {
+      public final String pinCode;
+      public Enable(String pinCode) {
+        this.pinCode = pinCode;
+      }
     }
 
-    @Override
-    public Behaviors.Receive<Command> createReceive() {
-      return receiveBuilder()
-          .onMessage(Hello.class, this::onHello)
-          .onMessage(ChangeGreeting.class, this::onChangeGreeting)
-          .build();
+    static class Disable implements Message {
+      public final String pinCode;
+      public Disable(String pinCode) {
+        this.pinCode = pinCode;
+      }
     }
 
-    private Behavior<Command> onHello(Hello hello) {
-      context.getLog().info(greeting + " " + hello.who + "!");
-      return Behaviors.same();
+    enum ActivityEvent implements Message {
+      INSTANCE
     }
 
-    private Behavior<Command> onChangeGreeting(ChangeGreeting changeGreeting) {
-      greeting = changeGreeting.newGreeting;
-      return Behaviors.same();
+
+    public static Behavior<Message> create(String pinCode) {
+      return Behaviors.setup(context -> new EnabledAlarm(context, pinCode));
     }
+
+    static class EnabledAlarm extends AbstractBehavior<Message> {
+
+      private final String pinCode;
+
+      public EnabledAlarm(ActorContext<Message> context, String pinCode) {
+        super(context);
+        this.pinCode = pinCode;
+      }
+
+      public Receive<Message> createReceive() {
+        return newReceiveBuilder()
+            .onMessage(
+                Disable.class,
+                // predicate
+                (disable) -> disable.pinCode.equals(pinCode),
+                this::onDisableAlarm)
+            .onMessageEquals(ActivityEvent.INSTANCE, () -> {
+              getContext().getLog().warn("EOEOEOEOEOE ALARM ALARM!!!");
+              return this;
+            }).build();
+      }
+
+      private Behavior<Message> onDisableAlarm(Disable message) {
+        getContext().getLog().info("Correct pin entered, disabling alarm");
+        return new DisabledAlarm(getContext(), pinCode);
+      }
+
+    }
+
+    static class DisabledAlarm extends AbstractBehavior<Message> {
+
+      private final String pinCode;
+
+      public DisabledAlarm(ActorContext<Message> context, String pinCode) {
+        super(context);
+        this.pinCode = pinCode;
+      }
+
+      @Override
+      public Receive<Message> createReceive() {
+        return newReceiveBuilder()
+            .onMessage(
+                Enable.class,
+                // predicate
+                (enable) -> enable.pinCode.equals(pinCode),
+                this::onEnableAlarm
+            ).build();
+      }
+
+      private Behavior<Message> onEnableAlarm(Enable message) {
+        getContext().getLog().info("Correct pin entered, enabling alarm");
+        return new EnabledAlarm(getContext(), pinCode);
+      }
+
+    }
+
   }
 
   public static void main(String[] args) {
-    var system = ActorSystem.<Command>create(
-        Behaviors.setup((context) -> new MutableGreetingBehavior("Hello", context)),
-        "my-system"
-    );
-    system.tell(new Hello("Johan"));
-    system.tell(new ChangeGreeting("Sveiki"));
-    system.tell(new Hello("Devdays Vilnius audience"));
+    var system = ActorSystem.create(Alarm.create("0000"), "my-system");
+    system.tell(Alarm.ActivityEvent.INSTANCE);
+    system.tell(new Alarm.Disable("1234"));
+    system.tell(Alarm.ActivityEvent.INSTANCE);
+    system.tell(new Alarm.Disable("0000"));
+    system.tell(Alarm.ActivityEvent.INSTANCE);
+    system.tell(new Alarm.Enable("0000"));
+    system.tell(Alarm.ActivityEvent.INSTANCE);
   }
 }
