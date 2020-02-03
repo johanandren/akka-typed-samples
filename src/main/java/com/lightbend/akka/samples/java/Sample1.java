@@ -36,9 +36,5 @@ public class Sample1 {
 
     rootActor.tell(new Hello("Johan"));
     rootActor.tell(new Hello("Akka talk audience"));
-
-    System.out.println("Press that any-key to terminate");
-    System.in.read();
-    actorSystem.terminate();
   }
 }
